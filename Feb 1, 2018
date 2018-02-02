@@ -1,0 +1,72 @@
+% I mainly refined the generator to make the script work as a whole
+% Some more issues occurred
+% Maybe the problem in the fftshift x dimension (I suspect)
+T=0.6;
+Fs=1e6;
+    % generate FMCW
+f1=2.4e9;
+f2=2.5e9;
+B=f2-f1;
+% N=T*Fs+1;
+N=T*Fs;
+D=0.6e-8;
+% alpha=B/40e-3;
+% f=@(t) f1+alpha*t;
+for i=1:1:N
+t=(i-1)/Fs;
+A=f(t);
+y=cos(2*pi*A*t);
+VTx=y/2;
+% figure(1)
+% plot(t,VTx)
+% xlim([0.04-T 0.04])
+% grid on
+    % mix the transmitted and received signals
+C=f(t-D);
+VRx=0.5*cos(2*pi*C*(t-D));
+mixed(i)=VTx*VRx;
+end
+range=3e8*D/2
+% figure(3)
+% time=0.04-T:1/Fs:0.04;
+% plot(time,mixed);
+% grid on;
+    % select a time to calculate the beating frequency
+% tm=(N+1)/Fs;  % in order to have same number of elements in matrix
+% ts=0:1/Fs:T;
+S=fft(mixed,N);
+% freq=Fs.*(0:N-1)/N;
+ST=fftshift(S);
+% fshift=(-(N-1)/2:(N-1)/2)*(Fs/N);
+fshift=(-N/2:N/2)*(Fs/N);
+% for k=1:1:N/2
+%     if fshift(k)> fshift(k+1)
+%         break;
+%     end
+% end
+ff=abs(fshift)>16000;
+ST(ff)=0;
+figure(2)
+plot(fshift,abs(ST))
+xlim([-100 100])
+grid on;
+    % calculate the range
+[Y1,I1]=max(abs(ST));
+fb=abs(fshift(I1));
+
+R=3e8*0.04*fb./(2*B)
+dis=range-R
+
+function [ y ] = f( t )
+while (t<0)
+    t=t+0.04;
+end
+while (t>0.04)
+    t=t-0.04;
+end
+f1=2.4e9;
+f2=2.5e9;
+B=f2-f1;
+alpha=B/0.04;
+y=f1+alpha.*t;
+end
